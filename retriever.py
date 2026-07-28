@@ -10,17 +10,33 @@ POSTGRES = {
     "port": 5432
 }
 
+
 TOP_K = 5
 
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+_model = None
+
+
+def get_model():
+    global _model
+
+    if _model is None:
+        _model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+    return _model
 
 
 def retrieve_context(question):
 
-    embedding = model.encode(
-        question,
-        normalize_embeddings=True
-    ).tolist()
+    embedding = (
+        get_model()
+        .encode(
+            question,
+            normalize_embeddings=True,
+        )
+        .tolist()
+    )
 
     conn = psycopg2.connect(**POSTGRES)
     register_vector(conn)
@@ -32,18 +48,15 @@ def retrieve_context(question):
         SELECT
             text,
             embedding <=> %s::vector AS distance
-
         FROM patient_vectors
-
         ORDER BY embedding <=> %s::vector
-
         LIMIT %s;
         """,
         (
             embedding,
             embedding,
-            TOP_K
-        )
+            TOP_K,
+        ),
     )
 
     rows = cur.fetchall()
@@ -51,6 +64,4 @@ def retrieve_context(question):
     cur.close()
     conn.close()
 
-    contexts = [r[0] for r in rows]
-
-    return contexts
+    return [row[0] for row in rows]
