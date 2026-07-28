@@ -4,8 +4,6 @@ streamlit
 google-genai
 psycopg2-binary
 pgvector
-sentence-transformers
-torch
 pandas
 numpy
 boto3
