@@ -1,6 +1,7 @@
 import psycopg2
 from pgvector.psycopg2 import register_vector
-from sentence_transformers import SentenceTransformer
+import os
+import requests
 
 POSTGRES = {
     "host": "healthcaredb.c94eay6ai7uu.ap-southeast-2.rds.amazonaws.com",
@@ -10,33 +11,38 @@ POSTGRES = {
     "port": 5432
 }
 
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+API_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+
+HEADERS = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
 TOP_K = 5
 
-_model = None
 
+def get_embedding(text):
 
-def get_model():
-    global _model
+    response = requests.post(
+        API_URL,
+        headers=HEADERS,
+        json={
+            "inputs": text
+        },
+        timeout=30
+    )
 
-    if _model is None:
-        _model = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2"
-        )
+    response.raise_for_status()
 
-    return _model
+    embedding = response.json()
+
+    return embedding
 
 
 def retrieve_context(question):
 
-    embedding = (
-        get_model()
-        .encode(
-            question,
-            normalize_embeddings=True,
-        )
-        .tolist()
-    )
+    embedding = get_embedding(question)
 
     conn = psycopg2.connect(**POSTGRES)
     register_vector(conn)
@@ -46,17 +52,15 @@ def retrieve_context(question):
     cur.execute(
         """
         SELECT
-            text,
-            embedding <=> %s::vector AS distance
+            text
         FROM patient_vectors
         ORDER BY embedding <=> %s::vector
-        LIMIT %s;
+        LIMIT %s
         """,
         (
             embedding,
-            embedding,
-            TOP_K,
-        ),
+            TOP_K
+        )
     )
 
     rows = cur.fetchall()
@@ -64,4 +68,4 @@ def retrieve_context(question):
     cur.close()
     conn.close()
 
-    return [row[0] for row in rows]
+    return [r[0] for r in rows]
