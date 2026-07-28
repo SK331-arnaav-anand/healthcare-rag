@@ -107,4 +107,4 @@ The application will be available at:
 - Streamlit: `http://localhost:8501`
 - FastAPI Docs: `http://localhost:8000/docs`
 - Public API: `https://<your-ngrok-url>/chat`
-```
+
