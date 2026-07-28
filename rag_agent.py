@@ -1,6 +1,10 @@
 from google import genai
+from dotenv import load_dotenv
+import os
 
-client = genai.Client()
+load_dotenv()
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 SYSTEM_PROMPT = """
 You are an expert healthcare assistant.
