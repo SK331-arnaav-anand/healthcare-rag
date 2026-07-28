@@ -4,7 +4,8 @@ import pandas as pd
 import streamlit as st
 
 # API_URL = "http://127.0.0.1:8000/chat"
-API_URL = "https://outing-grape-runny.ngrok-free.dev/chat"
+# API_URL = "https://outing-grape-runny.ngrok-free.dev/chat"
+API_URL = st.secrets["API_URL"]
 
 st.set_page_config(
     page_title="Healthcare RAG Assistant",
