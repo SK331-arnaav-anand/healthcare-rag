@@ -32,6 +32,7 @@ medication
 test_results
 insurance_provider
 billing_amount
+room_number
 text
 
 Rules:
